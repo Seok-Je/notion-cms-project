@@ -1,0 +1,9 @@
+{
+  "hooks": {
+    "post_tool_use": {
+      "matcher": "^(Edit|Write)$",
+      "cmd": "node .claude/hooks/lint-check.cjs",
+      "on_error": "show"
+    }
+  }
+}
