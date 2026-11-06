@@ -50,7 +50,7 @@ function transformNotionProject(raw: NotionProjectRaw): NotionProject {
 /**
  * Search API를 사용하여 Database의 모든 페이지 조회
  */
-async function searchDatabasePages(): Promise<NotionProjectRaw[]> {
+export async function searchDatabasePages(): Promise<NotionProjectRaw[]> {
   const url = 'https://api.notion.com/v1/search';
   const headers = {
     Authorization: `Bearer ${process.env.NOTION_TOKEN}`,
