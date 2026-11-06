@@ -3,6 +3,11 @@
  * /projects/[id]
  */
 
+// 중요: Notion CMS의 동적 콘텐츠를 실시간으로 제공하기 위해 동적 렌더링 필수
+// 이 설정이 없으면 Next.js가 빌드 시 페이지를 미리 렌더링하고 캐시하여
+// 동적 라우트 파라미터가 undefined가 되어 404가 발생함
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import { notFound } from 'next/navigation';

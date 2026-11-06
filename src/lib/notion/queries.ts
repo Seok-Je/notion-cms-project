@@ -70,11 +70,14 @@ async function searchDatabasePages(): Promise<NotionProjectRaw[]> {
   });
 
   try {
+    console.log('[searchDatabasePages] Fetching from Notion Search API...');
     const response = await fetch(url, {
       method: 'POST',
       headers,
       body,
     });
+
+    console.log(`[searchDatabasePages] Response status: ${response.status}`);
 
     if (!response.ok) {
       throw new Error(`Notion API error: ${response.status}`);
@@ -82,11 +85,20 @@ async function searchDatabasePages(): Promise<NotionProjectRaw[]> {
 
     const data = await response.json();
     const results = (data.results || []) as NotionProjectRaw[];
+    console.log(`[searchDatabasePages] Got ${results.length} total results from Search API`);
 
     // Database에 속한 페이지만 필터링
-    return results.filter((page) => page.parent?.data_source_id);
+    const filtered = results.filter((page) => page.parent?.data_source_id);
+    console.log(`[searchDatabasePages] After filtering by data_source_id: ${filtered.length} pages`);
+
+    // 로깅: 실제 반환되는 페이지들의 ID
+    filtered.forEach((page, index) => {
+      console.log(`[searchDatabasePages] Page ${index}: id=${page.id}, title=${page.properties?.Name?.title?.[0]?.plain_text || 'N/A'}`);
+    });
+
+    return filtered;
   } catch (error) {
-    console.error('Failed to search database pages:', error);
+    console.error('[searchDatabasePages] Failed to search database pages:', error);
     throw error;
   }
 }
@@ -150,22 +162,30 @@ export async function getProjectById(
   projectId: string
 ): Promise<NotionProject | null> {
   try {
+    console.log(`[getProjectById] Starting with projectId: ${projectId}`);
+
     // 1. Search API에서 모든 프로젝트를 조회하고 ID 매칭
     const pages = await searchDatabasePages();
+    console.log(`[getProjectById] Found ${pages.length} pages from search API`);
+
     const matchedPage = pages.find((p) => p.id === projectId);
+    console.log(`[getProjectById] Matched page in search: ${matchedPage ? 'YES' : 'NO'}`);
 
     if (matchedPage) {
       // Status가 Published인지 확인
       const status = matchedPage.properties?.Status?.select?.name;
+      console.log(`[getProjectById] Matched page status: ${status}`);
       if (status === 'Published') {
+        console.log(`[getProjectById] Returning published project from search`);
         return transformNotionProject(matchedPage);
       }
       // Published가 아니면 null 반환
+      console.log(`[getProjectById] Project not published, returning null`);
       return null;
     }
 
     // 2. Search API에서 찾지 못하면 Pages API 직접 호출
-    console.warn(`Project ${projectId} not found in search, trying direct API call`);
+    console.warn(`[getProjectById] Project ${projectId} not found in search, trying direct API call`);
 
     const response = await fetch(
       `https://api.notion.com/v1/pages/${projectId}`,
@@ -177,24 +197,29 @@ export async function getProjectById(
       }
     );
 
+    console.log(`[getProjectById] Direct API call response status: ${response.status}`);
+
     if (!response.ok) {
       console.error(
-        `Direct API call failed for ${projectId}: ${response.status}`
+        `[getProjectById] Direct API call failed for ${projectId}: ${response.status}`
       );
       return null;
     }
 
     const data = await response.json();
     const project = transformNotionProject(data as NotionProjectRaw);
+    console.log(`[getProjectById] Direct API returned project with status: ${project.status}`);
 
     // Published 상태만 반환
     if (project.status === 'Published') {
+      console.log(`[getProjectById] Returning published project from direct API`);
       return project;
     }
 
+    console.log(`[getProjectById] Direct API project not published, returning null`);
     return null;
   } catch (error) {
-    console.error(`Failed to fetch project ${projectId}:`, error);
+    console.error(`[getProjectById] Failed to fetch project ${projectId}:`, error);
     return null;
   }
 }
