@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { VFXPlaceholder } from '@/components/vfx-placeholder';
 import { getProjectById } from '@/lib/notion/queries';
 import { ErrorState } from '@/components/error-state';
 import { ArrowLeft, Calendar } from 'lucide-react';
@@ -97,20 +98,23 @@ async function ProjectDetailPage({ params }: ProjectDetailPageProps) {
           </div>
         </div>
 
-        {/* 썸네일 이미지 */}
-        {project.thumbnail && (
-          <div className="mb-8 overflow-hidden rounded-lg">
-            <div className="relative h-96 w-full">
+        {/* 썸네일 이미지 또는 플레이스홀더 */}
+        <div className="mb-8 overflow-hidden rounded-lg">
+          <div className="relative h-96 w-full aspect-video bg-muted">
+            {project.thumbnail ? (
               <Image
                 src={project.thumbnail}
                 alt={project.title}
                 fill
                 className="object-cover"
                 priority
+                unoptimized={true}
               />
-            </div>
+            ) : (
+              <VFXPlaceholder project={project} />
+            )}
           </div>
-        )}
+        </div>
 
         {/* 메타 정보 */}
         <div className="mb-12 rounded-lg border bg-card p-6">

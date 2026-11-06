@@ -6,6 +6,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
+import { VFXPlaceholder } from '@/components/vfx-placeholder';
 import { NotionProject } from '@/types/notion';
 
 interface ProjectCardProps {
@@ -16,8 +17,8 @@ export function ProjectCard({ project }: ProjectCardProps) {
   return (
     <Link href={`/projects/${project.id}`}>
       <div className="group overflow-hidden rounded-lg border bg-card transition-all duration-300 hover:shadow-lg hover:border-primary">
-        {/* 썸네일 이미지 */}
-        <div className="relative h-48 w-full overflow-hidden bg-muted">
+        {/* 썸네일 이미지 또는 플레이스홀더 */}
+        <div className="relative h-48 w-full overflow-hidden bg-muted aspect-video">
           {project.thumbnail ? (
             <Image
               src={project.thumbnail}
@@ -25,11 +26,10 @@ export function ProjectCard({ project }: ProjectCardProps) {
               fill
               className="object-cover transition-transform duration-300 group-hover:scale-105"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              unoptimized={true}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <span className="text-sm text-muted-foreground">이미지 없음</span>
-            </div>
+            <VFXPlaceholder project={project} />
           )}
         </div>
 

@@ -144,11 +144,29 @@ export async function getFeaturedProjects(): Promise<NotionProject[]> {
 
 /**
  * 특정 프로젝트 ID로 상세 정보 조회
+ * Search API 캐시를 먼저 확인한 후 Pages API 사용
  */
 export async function getProjectById(
   projectId: string
 ): Promise<NotionProject | null> {
   try {
+    // 1. Search API에서 모든 프로젝트를 조회하고 ID 매칭
+    const pages = await searchDatabasePages();
+    const matchedPage = pages.find((p) => p.id === projectId);
+
+    if (matchedPage) {
+      // Status가 Published인지 확인
+      const status = matchedPage.properties?.Status?.select?.name;
+      if (status === 'Published') {
+        return transformNotionProject(matchedPage);
+      }
+      // Published가 아니면 null 반환
+      return null;
+    }
+
+    // 2. Search API에서 찾지 못하면 Pages API 직접 호출
+    console.warn(`Project ${projectId} not found in search, trying direct API call`);
+
     const response = await fetch(
       `https://api.notion.com/v1/pages/${projectId}`,
       {
@@ -160,11 +178,21 @@ export async function getProjectById(
     );
 
     if (!response.ok) {
+      console.error(
+        `Direct API call failed for ${projectId}: ${response.status}`
+      );
       return null;
     }
 
     const data = await response.json();
-    return transformNotionProject(data as NotionProjectRaw);
+    const project = transformNotionProject(data as NotionProjectRaw);
+
+    // Published 상태만 반환
+    if (project.status === 'Published') {
+      return project;
+    }
+
+    return null;
   } catch (error) {
     console.error(`Failed to fetch project ${projectId}:`, error);
     return null;
